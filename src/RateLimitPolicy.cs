@@ -17,12 +17,11 @@ public class DotNet7RateLimitPolicy : Policy, IRateLimitPolicy
         _rateLimiter = rateLimiter ?? throw new ArgumentNullException(nameof(rateLimiter));
     }
 
-    public string PolicyKey => throw new NotImplementedException();
 
     /// <inheritdoc/>
     [DebuggerStepThrough]
     protected override TResult Implementation<TResult>(Func<Context, CancellationToken, TResult> action, Context context, CancellationToken cancellationToken)
-        => RateLimitEngine.Implementation(_rateLimiter, null, action, context, cancellationToken);
+        => RateLimitEngine.Implementation(_rateLimiter, null!, action, context, cancellationToken);
 }
 
 /// <summary>

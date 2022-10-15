@@ -21,7 +21,7 @@ public class AsyncDotNet7RateLimitPolicy : AsyncPolicy, IRateLimitPolicy
     [DebuggerStepThrough]
     protected override Task<TResult> ImplementationAsync<TResult>(Func<Context, CancellationToken, Task<TResult>> action, Context context, CancellationToken cancellationToken,
         bool continueOnCapturedContext)
-        => AsyncRateLimitEngine.ImplementationAsync(_rateLimiter, null, action, context, cancellationToken, continueOnCapturedContext);
+        => AsyncRateLimitEngine.ImplementationAsync(_rateLimiter, null!, action, context, cancellationToken, continueOnCapturedContext);
 }
 
 /// <summary>
