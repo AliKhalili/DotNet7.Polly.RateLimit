@@ -11,10 +11,15 @@
     <Authors>Ali Khalili</Authors>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/AliKhalili/DotNet7.Polly.RateLimit</RepositoryUrl>
-    <PackageTags>Polly;Rate-Limit;</PackageTags>
+    <PackageTags>Polly;Rate-limit;Throttle;Resilience;Policy;</PackageTags>
+    <PackageIcon>rate-limiting.png</PackageIcon>
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="..\icon\rate-limiting.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
     <None Include="..\README.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
