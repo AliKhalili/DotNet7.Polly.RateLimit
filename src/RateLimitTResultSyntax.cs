@@ -10,6 +10,27 @@ public abstract partial class DotNet7Policy
     /// Build a RateLimit <see cref="Policy"/> that will rate-limit executions based on the <see cref="FixedWindowRateLimiter" /> rate limiter.
     /// </summary>
     /// <typeparam name="TResult">The type of return values this policy will handle.</typeparam>
+    /// <param name="configureOptions">A delegate that is used to configure an <see cref="FixedWindowRateLimiterOptions"/>.</param>
+    /// <param name="tryReplenishment"> Attempts to replenish permits.
+    /// <param name="retryAfterFactory">An (optional) factory to use to express retry-after back to the caller, when an operation is rate-limited.
+    /// <remarks>If null, a <see cref="RateLimitRejectedException"/> with property <see cref="RateLimitRejectedException.RetryAfter"/> will be thrown to indicate rate-limiting.</remarks></param>
+    /// <returns></returns>
+    public static DotNet7RateLimitPolicy<TResult> FixedWindowRateLimit<TResult>(
+        Action<FixedWindowRateLimiterOptions> configureOptions,
+        TryReplenishment? tryReplenishment = null,
+        Func<RateLimitLease, Context, TResult> retryAfterFactory = null!)
+    {
+        ArgumentNullException.ThrowIfNull(configureOptions);
+        var options = new FixedWindowRateLimiterOptions();
+        configureOptions(options);
+
+        return FixedWindowRateLimit<TResult>(options, tryReplenishment, retryAfterFactory);
+    }
+
+    /// <summary>
+    /// Build a RateLimit <see cref="Policy"/> that will rate-limit executions based on the <see cref="FixedWindowRateLimiter" /> rate limiter.
+    /// </summary>
+    /// <typeparam name="TResult">The type of return values this policy will handle.</typeparam>
     /// <param name="options">Options to specify the behavior of the <see cref="FixedWindowRateLimiter"/>.</param>
     /// <param name="tryReplenishment"> Attempts to replenish permits.
     /// <param name="retryAfterFactory">An (optional) factory to use to express retry-after back to the caller, when an operation is rate-limited.
@@ -20,12 +41,34 @@ public abstract partial class DotNet7Policy
         TryReplenishment? tryReplenishment = null,
         Func<RateLimitLease, Context, TResult> retryAfterFactory = null!)
     {
+        ArgumentNullException.ThrowIfNull(options);
         ReplenishingRateLimiter rateLimiter = new FixedWindowRateLimiter(options);
         if (tryReplenishment is not null)
         {
             tryReplenishment += () => { return rateLimiter.TryReplenish(); };
         }
         return new DotNet7RateLimitPolicy<TResult>(rateLimiter, retryAfterFactory);
+    }
+
+    /// <summary>
+    /// Build a RateLimit <see cref="Policy"/> that will rate-limit executions based on the <see cref="SlidingWindowRateLimiter" /> rate limiter.
+    /// </summary>
+    /// <typeparam name="TResult">The type of return values this policy will handle.</typeparam>
+    /// <param name="configureOptions">A delegate that is used to configure an <see cref="SlidingWindowRateLimiterOptions"/>.</param>
+    /// <param name="tryReplenishment"> Attempts to replenish permits.
+    /// <param name="retryAfterFactory">An (optional) factory to use to express retry-after back to the caller, when an operation is rate-limited.
+    /// <remarks>If null, a <see cref="RateLimitRejectedException"/> with property <see cref="RateLimitRejectedException.RetryAfter"/> will be thrown to indicate rate-limiting.</remarks></param>
+    /// <returns></returns>
+    public static DotNet7RateLimitPolicy<TResult> SlidingWindowRateLimit<TResult>(
+        Action<SlidingWindowRateLimiterOptions> configureOptions,
+        TryReplenishment? tryReplenishment = null,
+        Func<RateLimitLease, Context, TResult> retryAfterFactory = null!)
+    {
+        ArgumentNullException.ThrowIfNull(configureOptions);
+        var options = new SlidingWindowRateLimiterOptions();
+        configureOptions(options);
+
+        return SlidingWindowRateLimit<TResult>(options, tryReplenishment, retryAfterFactory);
     }
 
     /// <summary>
@@ -42,12 +85,34 @@ public abstract partial class DotNet7Policy
         TryReplenishment? tryReplenishment = null,
         Func<RateLimitLease, Context, TResult> retryAfterFactory = null!)
     {
+        ArgumentNullException.ThrowIfNull(options);
         ReplenishingRateLimiter rateLimiter = new SlidingWindowRateLimiter(options);
         if (tryReplenishment is not null)
         {
             tryReplenishment += () => { return rateLimiter.TryReplenish(); };
         }
         return new DotNet7RateLimitPolicy<TResult>(rateLimiter, retryAfterFactory);
+    }
+
+    /// <summary>
+    /// Build a RateLimit <see cref="Policy"/> that will rate-limit executions based on the <see cref="TokenBucketRateLimiter" /> rate limiter.
+    /// </summary>
+    /// <typeparam name="TResult">The type of return values this policy will handle.</typeparam>
+    /// <param name="configureOptions">A delegate that is used to configure an <see cref="TokenBucketRateLimiterOptions"/>.</param>
+    /// <param name="tryReplenishment"> Attempts to replenish permits.
+    /// <param name="retryAfterFactory">An (optional) factory to use to express retry-after back to the caller, when an operation is rate-limited.
+    /// <remarks>If null, a <see cref="RateLimitRejectedException"/> with property <see cref="RateLimitRejectedException.RetryAfter"/> will be thrown to indicate rate-limiting.</remarks></param>
+    /// <returns></returns>
+    public static DotNet7RateLimitPolicy<TResult> TokenBucketRateLimit<TResult>(
+        Action<TokenBucketRateLimiterOptions> configureOptions,
+        TryReplenishment? tryReplenishment = null,
+        Func<RateLimitLease, Context, TResult> retryAfterFactory = null!)
+    {
+        ArgumentNullException.ThrowIfNull(configureOptions);
+        var options = new TokenBucketRateLimiterOptions();
+        configureOptions(options);
+
+        return TokenBucketRateLimit<TResult>(options, tryReplenishment, retryAfterFactory);
     }
 
     /// <summary>
@@ -64,12 +129,33 @@ public abstract partial class DotNet7Policy
         TryReplenishment? tryReplenishment = null,
         Func<RateLimitLease, Context, TResult> retryAfterFactory = null!)
     {
+        ArgumentNullException.ThrowIfNull(options);
         ReplenishingRateLimiter rateLimiter = new TokenBucketRateLimiter(options);
         if (tryReplenishment is not null)
         {
             tryReplenishment += () => { return rateLimiter.TryReplenish(); };
         }
         return new DotNet7RateLimitPolicy<TResult>(rateLimiter, retryAfterFactory);
+    }
+
+    /// <summary>
+    /// Build a RateLimit <see cref="Policy"/> that will rate-limit executions based on the <see cref="ConcurrencyLimiter" /> rate limiter.
+    /// </summary>
+    /// <typeparam name="TResult">The type of return values this policy will handle.</typeparam>
+    /// <param name="configureOptions">A delegate that is used to configure an <see cref="ConcurrencyLimiterOptions"/>.</param>
+    /// <param name="retryAfterFactory">An (optional) factory to use to express retry-after back to the caller, when an operation is rate-limited.
+    /// <remarks>If null, a <see cref="RateLimitRejectedException"/> with property <see cref="RateLimitRejectedException.RetryAfter"/> will be thrown to indicate rate-limiting.</remarks></param>
+    /// <returns></returns>
+    public static DotNet7RateLimitPolicy<TResult> ConcurrencyRateLimit<TResult>(
+        Action<ConcurrencyLimiterOptions> configureOptions,
+        TryReplenishment? tryReplenishment = null,
+        Func<RateLimitLease, Context, TResult> retryAfterFactory = null!)
+    {
+        ArgumentNullException.ThrowIfNull(configureOptions);
+        var options = new ConcurrencyLimiterOptions();
+        configureOptions(options);
+
+        return ConcurrencyRateLimit<TResult>(options, retryAfterFactory);
     }
 
     /// <summary>
@@ -84,6 +170,7 @@ public abstract partial class DotNet7Policy
         ConcurrencyLimiterOptions options,
         Func<RateLimitLease, Context, TResult> retryAfterFactory = null!)
     {
+        ArgumentNullException.ThrowIfNull(options);
         RateLimiter rateLimiter = new ConcurrencyLimiter(options);
 
         return new DotNet7RateLimitPolicy<TResult>(rateLimiter, retryAfterFactory);
