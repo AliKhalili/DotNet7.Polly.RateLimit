@@ -9,13 +9,13 @@ var builder = WebApplication.CreateBuilder(args);
 var noOp = Policy.NoOpAsync().AsAsyncPolicy<HttpResponseMessage>();
 
 builder.Services.AddHttpClient("ratelimiter")
-.AddPolicyHandler(DotNet7Policy.FixedWindowRateLimitAsync<HttpResponseMessage>(new FixedWindowRateLimiterOptions()
+.AddPolicyHandler(DotNet7Policy.FixedWindowRateLimitAsync<HttpResponseMessage>(options =>
 {
-    AutoReplenishment = true,
-    PermitLimit = 1,
-    QueueLimit = 0,
-    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-    Window = TimeSpan.FromSeconds(5)
+    options.AutoReplenishment = true;
+    options.PermitLimit = 1;
+    options.QueueLimit = 0;
+    options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+    options.Window = TimeSpan.FromSeconds(5);
 }));
 
 var app = builder.Build();
