@@ -4,15 +4,10 @@ using FluentAssertions;
 
 namespace DotNet7.Polly.RateLimit.Tests;
 
-public class RateLimitSyntaxTest
+public class FixedWindow_RateLimitSyntaxTest : RateLimitSyntaxBaseTest
 {
-    private bool TryExecutePolicy(DotNet7RateLimitPolicy policy)
-    {
-        return policy.Execute<bool>(() => true);
-    }
-
     [Fact]
-    public void Should_throw_when_option_is_null()
+    public override void Should_throw_when_option_is_null()
     {
         // Arrange
         var invalidSyntax = () => DotNet7Policy.FixedWindowRateLimit(options: null!);
@@ -22,7 +17,7 @@ public class RateLimitSyntaxTest
     }
 
     [Fact]
-    public void Should_throw_when_configure_option_is_null()
+    public override void Should_throw_when_configure_option_is_null()
     {
         // Arrange
         var invalidSyntax = () => DotNet7Policy.FixedWindowRateLimit(configureOptions: null!);
@@ -32,7 +27,7 @@ public class RateLimitSyntaxTest
     }
 
     [Fact]
-    public void Given_fixed_window_with_one_permit_should_acquire_lease()
+    public override void Given_limiter_with_one_permit_should_acquire_lease()
     {
         // Arrange
         var rateLimiter = DotNet7Policy.FixedWindowRateLimit(new FixedWindowRateLimiterOptions
@@ -50,7 +45,7 @@ public class RateLimitSyntaxTest
     }
 
     [Fact]
-    public void Given_fixed_window_with_one_permit_throw_rate_limit_exception_for_second_request()
+    public override void Given_limiter_with_one_permit_throw_rate_limit_exception_for_second_request()
     {
         // Arrange
         var rateLimiter = DotNet7Policy.FixedWindowRateLimit(new FixedWindowRateLimiterOptions
@@ -73,7 +68,7 @@ public class RateLimitSyntaxTest
     [InlineData(1)]
     [InlineData(2)]
     [InlineData(50)]
-    public void Given_fixed_window_with_N_permit_throw_rate_limit_exception_for_N_plus_1_th_request(int permitLimit)
+    public override void Given_limiter_with_N_permit_throw_rate_limit_exception_for_N_plus_1_th_request(int permitLimit)
     {
         // Arrange
         var rateLimiter = DotNet7Policy.FixedWindowRateLimit(new FixedWindowRateLimiterOptions
@@ -100,7 +95,7 @@ public class RateLimitSyntaxTest
     [InlineData(1)]
     [InlineData(2)]
     [InlineData(50)]
-    public async void Given_fixed_window_with_N_permit_throw_rate_limit_exception_for_N_plus_1_th_request_and_acquire_for_next_N_th_after_replenishment(int permitLimit)
+    public override void Given_limiter_with_N_permit_throw_rate_limit_exception_for_N_plus_1_th_request_and_acquire_for_next_N_th_after_replenishment(int permitLimit)
     {
         // Arrange
         ReplenishingRateLimiter rateLimiter = null!;
@@ -129,7 +124,7 @@ public class RateLimitSyntaxTest
         results.Should().AllBeEquivalentTo(true);
         exceededRequest.Should().Throw<RateLimitRejectedException>();
 
-        await Task.Delay(1);
+        Task.Delay(2).GetAwaiter().GetResult();
         rateLimiter!.TryReplenish();
 
         // Act
