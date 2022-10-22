@@ -12,6 +12,7 @@ public abstract class RateLimitSyntaxBaseTest
     public abstract void Given_limiter_with_one_permit_throw_rate_limit_exception_for_second_request();
     public abstract void Given_limiter_with_N_permit_throw_rate_limit_exception_for_N_plus_1_th_request(int permitLimit);
     public abstract void Given_limiter_with_N_permit_throw_rate_limit_exception_for_N_plus_1_th_request_and_acquire_for_next_N_th_after_replenishment(int permitLimit);
+    public abstract void Given_immediate_parallel_contention_limiter_still_only_permits_one(int parallelContention);
 }
 
 public abstract class AsyncRateLimitSyntaxBaseTest : RateLimitSyntaxBaseTest

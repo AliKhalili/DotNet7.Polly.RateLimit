@@ -144,6 +144,51 @@ public class TokenBucket_AsyncRateLimitSyntaxTest : AsyncRateLimitSyntaxBaseTest
         nextResults.Should().AllBeEquivalentTo(true);
     }
 
+    [Theory]
+    [InlineData(2)]
+    [InlineData(5)]
+    [InlineData(100)]
+    public async override void Given_immediate_parallel_contention_limiter_still_only_permits_one(int parallelContention)
+    {
+        // Arrange
+        var rateLimiterPolicy = DotNet7Policy.TokenBucketRateLimitAsync(
+            option =>
+            {
+                option.TokenLimit = 1;
+                option.TokensPerPeriod = 1;
+                option.QueueLimit = 0;
+                option.AutoReplenishment = false;
+                option.ReplenishmentPeriod = TimeSpan.FromMilliseconds(1);
+            });
+
+        // Act
+        var tasks = new Task<bool>[parallelContention];
+        ManualResetEventSlim gate = new();
+        for (int i = 0; i < tasks.Length; i++)
+        {
+            int index = i;
+            tasks[index] = Task.Run<bool>(async () =>
+            {
+                try
+                {
+                    gate.Wait();
+                    return await TryExecutePolicy(rateLimiterPolicy);
+                }
+                catch (RateLimitRejectedException exception)
+                {
+                    return false;
+                }
+            });
+        }
+        gate.Set();
+        await Task.WhenAll(tasks);
+
+        // Assert
+        var results = tasks.Select(t => t.Result).ToList();
+        results.Count(x => x).Should().Be(1);
+        results.Count(x => !x).Should().Be(parallelContention - 1);
+    }
+
     [Fact]
     public override async void Given_limiter_with_one_permit_and_one_queue_should_acquire_queued_and_throw_for_3_request()
     {

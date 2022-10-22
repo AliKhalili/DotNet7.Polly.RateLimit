@@ -142,4 +142,48 @@ public class SlidingWindow_RateLimitSyntaxTest : RateLimitSyntaxBaseTest
         // Assert
         nextResults.Should().AllBeEquivalentTo(true);
     }
+    [Theory]
+    [InlineData(2)]
+    [InlineData(5)]
+    [InlineData(100)]
+    public override void Given_immediate_parallel_contention_limiter_still_only_permits_one(int parallelContention)
+    {
+        // Arrange
+        var rateLimiterPolicy = DotNet7Policy.SlidingWindowRateLimit(
+            option =>
+            {
+                option.PermitLimit = 1;
+                option.SegmentsPerWindow = 1;
+                option.QueueLimit = 0;
+                option.AutoReplenishment = false;
+                option.Window = TimeSpan.FromMilliseconds(1);
+            });
+
+        // Act
+        var tasks = new Task<bool>[parallelContention];
+        ManualResetEventSlim gate = new();
+        for (int i = 0; i < tasks.Length; i++)
+        {
+            int index = i;
+            tasks[index] = Task.Run<bool>(() =>
+            {
+                try
+                {
+                    gate.Wait();
+                    return TryExecutePolicy(rateLimiterPolicy);
+                }
+                catch (RateLimitRejectedException exception)
+                {
+                    return false;
+                }
+            });
+        }
+        gate.Set();
+        Task.WhenAll(tasks);
+
+        // Assert
+        var results = tasks.Select(t => t.Result).ToList();
+        results.Count(x => x).Should().Be(1);
+        results.Count(x => !x).Should().Be(parallelContention - 1);
+    }
 }
