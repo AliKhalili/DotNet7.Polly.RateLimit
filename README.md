@@ -62,45 +62,52 @@ var rateLimiterPolicy =  DotNet7Policy.SlidingWindowRateLimit(
 
 ## Queuing requests
 ```c#
-// Arrange
-ReplenishingRateLimiter rateLimiter = null!;
-var rateLimiterPolicy = DotNet7Policy.TokenBucketRateLimitAsync(
-            option =>
+var policy = DotNet7Policy.FixedWindowRateLimitAsync(options =>
+{
+    options.Window = TimeSpan.FromSeconds(1);
+    options.PermitLimit = 1;
+    options.QueueLimit = 4;
+    options.AutoReplenishment = true;
+    options.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+});
+stopwatch.Start();
+var tasks = new Task<(bool IsAcquire, long ElapsedTicks)>[6];
+ManualResetEventSlim gate = new();
+for (int i = 0; i < tasks.Length; i++)
+{
+    tasks[i] = Task.Run<(bool, long)>(async () =>
+        {
+            try
             {
-                option.TokenLimit = 1;
-                option.TokensPerPeriod = 1;
-                option.QueueLimit = 1;
-                option.AutoReplenishment = false;
-                option.ReplenishmentPeriod = TimeSpan.FromMilliseconds(1);
-            },
-            limiter =>
+                gate.Wait();
+                return (await policy.ExecuteAsync(() => DoSomething()), stopwatch.ElapsedTicks);
+            }
+            catch (RateLimitRejectedException exception)
             {
-                rateLimiter = limiter;
-            });
-
-// Act
-var req1 = TryExecutePolicy(rateLimiterPolicy);
-var req2 = TryExecutePolicy(rateLimiterPolicy);
-var req3 = TryExecutePolicy(rateLimiterPolicy);
-await req1;
-
-// Assert
-req1.Status.Should().Be(TaskStatus.RanToCompletion);
-req2.Status.Should().Be(TaskStatus.WaitingForActivation);
-req3.Status.Should().Be(TaskStatus.Faulted);
-
-req1.Result.Should().BeTrue();
-req3.Exception.Should().BeOfType<AggregateException>();
-req3.Exception!.InnerException.Should().BeOfType<RateLimitRejectedException>();
-
-await Task.Delay(2);
-rateLimiter!.TryReplenish();
-
-await req2;
-req2.Status.Should().Be(TaskStatus.RanToCompletion);
-req2.Result.Should().BeTrue();
+                return (false, stopwatch.ElapsedTicks);
+            }
+        });
+}
+gate.Set();
+await Task.WhenAll(tasks);
+stopwatch.Stop();
+var index = 1;
+foreach (var task in tasks.OrderBy(x => x.Result.ElapsedTicks))
+{
+    System.Console.WriteLine("Time: {0:s\\.fff}, Task #{1} was acquired task: {2}",
+        TimeSpan.FromTicks(task.Result.ElapsedTicks),
+        index++,
+        task.Result.IsAcquire);
+}
 ```
-
+```
+Time: 0.008, Task #1 was acquired task: True
+Time: 0.013, Task #2 was acquired task: False
+Time: 1.014, Task #3 was acquired task: True
+Time: 2.009, Task #4 was acquired task: True
+Time: 3.007, Task #5 was acquired task: True
+Time: 4.018, Task #6 was acquired task: True
+```
 ## Use Rate Limiting with Http Client Factory
 ```c#
 
