@@ -14,7 +14,7 @@ internal static class AsyncRateLimitEngine
         bool continueOnCapturedContext
         )
     {
-        var lease = await rateLimiter.AcquireAsync(1);
+        var lease = await rateLimiter.AcquireAsync(1, cancellationToken);
 
         if (lease.IsAcquired)
         {
